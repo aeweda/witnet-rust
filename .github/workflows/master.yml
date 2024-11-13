@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - '*'
+      - '!*bridge*'
 
 env:
   CARGO_TERM_COLOR: always
