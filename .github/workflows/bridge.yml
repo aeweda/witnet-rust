@@ -92,39 +92,63 @@ jobs:
 #?                                        Sign & Publish                                              ?#
 #?                                                                                                    ?#
 #?####################################################################################################?#
-  # Publish:
-  #   needs: [Build_aarch64, Build_x86_64]
-  #   runs-on: ubuntu-latest
-  #   environment: tags
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
+  Publish:
+    needs: [Build_aarch64, Build_x86_64]
+    runs-on: ubuntu-latest
+    # environment: tags
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  #     - name: Login to Docker Container Registry
-  #       uses: docker/login-action@v3
-  #       with:
-  #         username: ${{ secrets.DOCKER_USERNAME }}
-  #         password: ${{ secrets.DOCKER_PASSWORD }}
+      # - name: Login to Docker Container Registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_PASSWORD }}
 
-  #     - name: Build Base
-  #       run: |
-  #         docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-  #         docker buildx create --name multiarch --driver docker-container --use
-  #         docker buildx inspect --bootstrap
+      - name: Download aarch64 Build
+        uses: actions/download-artifact@v4
+        with:
+          name: aarch64-release
+          path: all-releases/aarch64/
 
-  #     # Build Docker images (Latest & TAG)
-  #     - name: Build TAG
-  #       run: docker buildx build -f docker/witnet-rust/Dockerfile --progress=plain --build-arg WITNET_VERSION=${{github.ref_name}} --platform linux/amd64,linux/arm64,linux/arm/v7 --tag witnet/witnet-rust:${{github.ref_name}} docker/witnet-rust --push --no-cache
+      - name: Download x86_64 Build
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64-release
+          path: all-releases/x86_64/
 
-  #     - name: Check Pre-release
-  #       run: |
-  #         TAG=${{ github.ref_name }}
-  #         if [[ "$TAG" =~ - ]]; then
-  #           echo "prerelease=true" >> $GITHUB_ENV
-  #         else
-  #           echo "prerelease=false" >> $GITHUB_ENV
-  #         fi
+      - name: Prepare aarch64
+        run: |
+          chmod +x ./all-releases/aarch64/witnet-centralized-ethereum-bridge
+          mv all-releases/aarch64/witnet-centralized-ethereum-bridge docker/bridge/witnet-centralized-ethereum-bridge-aarch64-unknown-linux-gnu
 
-  #     - name: Build Latest if not Pre-Release
-  #       run: docker buildx build -f docker/witnet-rust/Dockerfile --progress=plain --build-arg WITNET_VERSION=latest --platform linux/amd64,linux/arm64,linux/arm/v7 --tag witnet/witnet-rust:latest docker/witnet-rust --push --no-cache
-  #       if: env.prerelease == 'false'
+      - name: Prepare x86_64
+        run: |
+          chmod +x ./all-releases/x86_64/witnet-centralized-ethereum-bridge
+          mv all-releases/x86_64/witnet-centralized-ethereum-bridge docker/bridge/witnet-centralized-ethereum-bridge-x86_64-unknown-linux-gnu
+
+      - name: List binaries
+        run: tree docker
+
+      - name: Build Base
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx create --name multiarch --driver docker-container --use
+          docker buildx inspect --bootstrap
+
+      # Build Docker images (Latest & TAG)
+      - name: Build TAG
+        run: docker buildx build -f docker/bridge/Dockerfile --progress=plain --platform linux/amd64,linux/arm64 --tag witnet/witnet-centralized-ethereum-bridge:${{github.ref_name}} docker/bridge
+
+      # - name: Check Pre-release
+      #   run: |
+      #     TAG=${{ github.ref_name }}
+      #     if [[ "$TAG" =~ - ]]; then
+      #       echo "prerelease=true" >> $GITHUB_ENV
+      #     else
+      #       echo "prerelease=false" >> $GITHUB_ENV
+
+      # - name: Build Latest if not Pre-Release
+      #   if: env.prerelease == 'false'
+      #   run: docker buildx build -f docker/bridge/Dockerfile --progress=plain --platform linux/amd64,linux/arm64 --tag witnet/witnet-centralized-ethereum-bridge:latest docker/bridge --push --no-cache
