@@ -137,8 +137,8 @@ jobs:
 
       - name: Compile openssl 1.0.2p from source
         run: |
-          chmod +x ./docker/cross-compilation/openssl.sh
-          sh ./docker/cross-compilation/openssl.sh linux-aarch64 aarch64-linux-gnu-
+          chmod +x ./docker/cross-compilation/openssl-macos.sh
+          sh ./docker/cross-compilation/openssl-macos.sh linux-aarch64 aarch64-linux-gnu-
 
       - name: Building Macos Binary
         run: MACOSX_DEPLOYMENT_TARGET=10.14 OPENSSL_STATIC=1 OPENSSL_DIR="/openssl" cargo build --release -p witnet -p witnet_toolkit
