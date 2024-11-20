@@ -2,20 +2,31 @@
 
 brew install aarch64-elf-gcc binutils
 
-# Set the target and compiler
-TARGET=$1
-CROSS_COMPILE=$2
+set -ex
 
-# Download and extract OpenSSL
-wget https://www.openssl.org/source/openssl-1.0.2p.tar.gz
-tar -xzf openssl-1.0.2p.tar.gz
-cd openssl-1.0.2p
+main() {
+    local version=1.0.2p
+    local os=$1 \
+          triple=$2
 
-# Configure and build OpenSSL
-./Configure $TARGET no-shared no-dso --prefix=/openssl --openssldir=/openssl
-make -j$(sysctl -n hw.ncpu) CC=aarch64-elf-gcc AS=aarch64-elf-as
-make install
+    td=$(mktemp -d)
 
-# Clean up
-cd ..
-rm -rf openssl-1.0.2p openssl-1.0.2p.tar.gz
+    pushd $td
+    wget https://www.openssl.org/source/openssl-$version.tar.gz
+    tar --strip-components=1 -xzvf openssl-$version.tar.gz
+    AR=${triple}ar CC=${triple}gcc ./Configure \
+      --prefix=/openssl \
+      no-dso \
+      $os \
+      -fPIC \
+      ${@:3}
+    nice make -j$(sysctl -n hw.ncpu) CC=aarch64-elf-gcc AS=aarch64-elf-as
+    make install
+
+    popd
+
+    rm -rf $td
+    rm $0
+}
+
+main "${@}"
