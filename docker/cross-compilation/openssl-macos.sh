@@ -7,7 +7,7 @@ TARGET=$1
 CROSS_COMPILE=$2
 
 # Download and extract OpenSSL
-wget -O https://www.openssl.org/source/openssl-1.0.2p.tar.gz
+wget https://www.openssl.org/source/openssl-1.0.2p.tar.gz
 tar -xzf openssl-1.0.2p.tar.gz
 cd openssl-1.0.2p
 
