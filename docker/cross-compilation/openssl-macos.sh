@@ -1,6 +1,6 @@
 #!/bin/bash
 
-brew install aarch64-elf-gcc
+brew install aarch64-elf-gcc binutils
 
 # Set the target and compiler
 TARGET=$1
@@ -13,7 +13,7 @@ cd openssl-1.0.2p
 
 # Configure and build OpenSSL
 ./Configure $TARGET no-shared no-dso --prefix=/openssl --openssldir=/openssl
-make -j$(sysctl -n hw.ncpu)
+make -j$(sysctl -n hw.ncpu) CC=aarch64-elf-gcc AS=aarch64-elf-as
 make install
 
 # Clean up
